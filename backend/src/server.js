@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './db/database.js';
 import './db/migrate.js';
+import authRoutes from './routes/auth.js';
 
 dotenv.config();
 
@@ -21,6 +22,8 @@ app.get('/api/seed', (req, res) => {
     res.json({ seed: SEED, coefficients: COEFFICIENTS });
   });
 });
+
+app.use('/auth', authRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
