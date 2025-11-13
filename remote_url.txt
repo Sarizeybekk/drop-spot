@@ -1,1 +1,1 @@
-no-remote
+https://github.com/Sarizeybekk/drop-spot.git
