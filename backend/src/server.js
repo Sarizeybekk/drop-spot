@@ -5,6 +5,7 @@ import db from './db/database.js';
 import './db/migrate.js';
 import authRoutes from './routes/auth.js';
 import dropsRoutes from './routes/drops.js';
+import adminRoutes from './routes/admin.js';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.get('/api/seed', (req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/drops', dropsRoutes);
+app.use('/admin', adminRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
