@@ -45,13 +45,13 @@ describe('Auth API Integration Tests', () => {
     const response = await request(app)
       .post('/auth/signup')
       .send({
-        email: 'user@test.com',
+        email: 'newuser@test.com',
         password: 'password123'
       });
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('token');
-    expect(response.body.user.email).toBe('user@test.com');
+    expect(response.body.user.email).toBe('newuser@test.com');
   });
 
   test('POST /auth/signup - Reject duplicate email', async () => {
