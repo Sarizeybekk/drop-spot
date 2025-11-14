@@ -34,22 +34,6 @@ function validateDrop(req, res, next) {
   }
 }
 
-/**
- * @swagger
- * /admin/drops:
- *   get:
- *     summary: Tüm drop'ları listele (Admin)
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Drop listesi
- *       401:
- *         description: Authentication gerekli
- *       403:
- *         description: Admin yetkisi gerekli
- */
 router.get('/drops', (req, res) => {
   try {
     const drops = db.prepare(`
@@ -90,44 +74,6 @@ router.get('/drops', (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /admin/drops:
- *   post:
- *     summary: Yeni drop oluştur (Admin)
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - total_stock
- *               - claim_window_start
- *               - claim_window_end
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               total_stock:
- *                 type: integer
- *               claim_window_start:
- *                 type: integer
- *               claim_window_end:
- *                 type: integer
- *     responses:
- *       201:
- *         description: Drop oluşturuldu
- *       400:
- *         description: Validation hatası
- *       403:
- *         description: Admin yetkisi gerekli
- */
 router.post('/drops', validateDrop, (req, res) => {
   try {
     const { title, description, total_stock, claim_window_start, claim_window_end } = req.body;
@@ -159,52 +105,6 @@ router.post('/drops', validateDrop, (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /admin/drops/{id}:
- *   put:
- *     summary: Drop güncelle (Admin)
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - total_stock
- *               - claim_window_start
- *               - claim_window_end
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               total_stock:
- *                 type: integer
- *               claim_window_start:
- *                 type: integer
- *               claim_window_end:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Drop güncellendi
- *       400:
- *         description: Validation hatası
- *       403:
- *         description: Admin yetkisi gerekli
- *       404:
- *         description: Drop bulunamadı
- */
 router.put('/drops/:id', validateDrop, (req, res) => {
   try {
     const dropId = parseInt(req.params.id);
@@ -255,28 +155,6 @@ router.put('/drops/:id', validateDrop, (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /admin/drops/{id}:
- *   delete:
- *     summary: Drop sil (Admin)
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Drop silindi
- *       403:
- *         description: Admin yetkisi gerekli
- *       404:
- *         description: Drop bulunamadı
- */
 router.delete('/drops/:id', (req, res) => {
   try {
     const dropId = parseInt(req.params.id);

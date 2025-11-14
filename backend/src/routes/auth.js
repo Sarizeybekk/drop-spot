@@ -6,36 +6,6 @@ import { signupSchema, loginSchema, validateRequest } from '../utils/validation.
 
 const router = express.Router();
 
-/**
- * @swagger
- * /auth/signup:
- *   post:
- *     summary: Kullanıcı kaydı
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *                 minLength: 6
- *     responses:
- *       201:
- *         description: Kullanıcı başarıyla oluşturuldu
- *       409:
- *         description: Email zaten kayıtlı
- *       400:
- *         description: Validation hatası
- */
 router.post('/signup', validateRequest(signupSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -74,33 +44,6 @@ router.post('/signup', validateRequest(signupSchema), async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /auth/login:
- *   post:
- *     summary: Kullanıcı girişi
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Giriş başarılı
- *       401:
- *         description: Geçersiz credentials
- */
 router.post('/login', validateRequest(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;

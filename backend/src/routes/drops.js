@@ -6,16 +6,6 @@ import crypto from 'crypto';
 
 const router = express.Router();
 
-/**
- * @swagger
- * /drops:
- *   get:
- *     summary: Aktif drop listesi
- *     tags: [Drops]
- *     responses:
- *       200:
- *         description: Drop listesi
- */
 router.get('/', (req, res) => {
   try {
     const now = Math.floor(Date.now() / 1000);
@@ -58,28 +48,6 @@ router.get('/', (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /drops/{id}/join:
- *   post:
- *     summary: Waitlist'e katıl
- *     tags: [Drops]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       201:
- *         description: Waitlist'e katıldı
- *       200:
- *         description: Zaten waitlist'te
- *       401:
- *         description: Authentication gerekli
- */
 router.post('/:id/join', authenticateToken, (req, res) => {
   const transaction = db.transaction(() => {
     try {
@@ -138,26 +106,6 @@ router.post('/:id/join', authenticateToken, (req, res) => {
   transaction();
 });
 
-/**
- * @swagger
- * /drops/{id}/leave:
- *   post:
- *     summary: Waitlist'ten ayrıl
- *     tags: [Drops]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Waitlist'ten ayrıldı
- *       401:
- *         description: Authentication gerekli
- */
 router.post('/:id/leave', authenticateToken, (req, res) => {
   try {
     const dropId = parseInt(req.params.id);
@@ -187,30 +135,6 @@ router.post('/:id/leave', authenticateToken, (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /drops/{id}/claim:
- *   post:
- *     summary: Drop claim et
- *     tags: [Drops]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       201:
- *         description: Claim başarılı
- *       200:
- *         description: Zaten claim edilmiş
- *       400:
- *         description: Claim window açık değil
- *       401:
- *         description: Authentication gerekli
- */
 router.post('/:id/claim', authenticateToken, (req, res) => {
   const transaction = db.transaction(() => {
     try {
