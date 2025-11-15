@@ -1,10 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.js';
 import db from './db/database.js';
 import './db/migrate.js';
 import authRoutes from './routes/auth.js';
 import dropsRoutes from './routes/drops.js';
+import adminRoutes from './routes/admin.js';
 
 dotenv.config();
 
@@ -13,6 +16,8 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'DropSpot API is running' });
@@ -26,6 +31,7 @@ app.get('/api/seed', (req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/drops', dropsRoutes);
+app.use('/admin', adminRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
