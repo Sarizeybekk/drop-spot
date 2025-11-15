@@ -2,9 +2,20 @@ import express from 'express';
 import db from '../db/database.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { calculatePriorityScore } from '../config/seed.js';
+import crypto from 'crypto';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /drops:
+ *   get:
+ *     summary: Aktif drop listesi
+ *     tags: [Drops]
+ *     responses:
+ *       200:
+ *         description: Drop listesi
+ */
 router.get('/', (req, res) => {
   try {
     const now = Math.floor(Date.now() / 1000);
@@ -47,6 +58,28 @@ router.get('/', (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /drops/{id}/join:
+ *   post:
+ *     summary: Waitlist'e katıl
+ *     tags: [Drops]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       201:
+ *         description: Waitlist'e katıldı
+ *       200:
+ *         description: Zaten waitlist'te
+ *       401:
+ *         description: Authentication gerekli
+ */
 router.post('/:id/join', authenticateToken, (req, res) => {
   const transaction = db.transaction(() => {
     try {
@@ -105,6 +138,26 @@ router.post('/:id/join', authenticateToken, (req, res) => {
   transaction();
 });
 
+/**
+ * @swagger
+ * /drops/{id}/leave:
+ *   post:
+ *     summary: Waitlist'ten ayrıl
+ *     tags: [Drops]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Waitlist'ten ayrıldı
+ *       401:
+ *         description: Authentication gerekli
+ */
 router.post('/:id/leave', authenticateToken, (req, res) => {
   try {
     const dropId = parseInt(req.params.id);
@@ -132,6 +185,120 @@ router.post('/:id/leave', authenticateToken, (req, res) => {
     console.error('Leave waitlist error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+/**
+ * @swagger
+ * /drops/{id}/claim:
+ *   post:
+ *     summary: Drop claim et
+ *     tags: [Drops]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       201:
+ *         description: Claim başarılı
+ *       200:
+ *         description: Zaten claim edilmiş
+ *       400:
+ *         description: Claim window açık değil
+ *       401:
+ *         description: Authentication gerekli
+ */
+router.post('/:id/claim', authenticateToken, (req, res) => {
+  const transaction = db.transaction(() => {
+    try {
+      const dropId = parseInt(req.params.id);
+      const userId = req.user.id;
+      const now = Math.floor(Date.now() / 1000);
+
+      const drop = db.prepare('SELECT * FROM drops WHERE id = ?').get(dropId);
+      if (!drop) {
+        return res.status(404).json({ error: 'Drop not found' });
+      }
+
+      if (now < drop.claim_window_start) {
+        return res.status(400).json({ error: 'Claim window has not started yet' });
+      }
+
+      if (now > drop.claim_window_end) {
+        return res.status(400).json({ error: 'Claim window has ended' });
+      }
+
+      const existingClaim = db.prepare(`
+        SELECT * FROM claims WHERE drop_id = ? AND user_id = ?
+      `).get(dropId, userId);
+
+      if (existingClaim) {
+        return res.status(200).json({
+          message: 'Already claimed',
+          claim: existingClaim
+        });
+      }
+
+      const waitlist = db.prepare(`
+        SELECT * FROM waitlists 
+        WHERE drop_id = ? AND user_id = ?
+        ORDER BY priority_score DESC
+      `).get(dropId, userId);
+
+      if (!waitlist) {
+        return res.status(403).json({ error: 'Not on waitlist' });
+      }
+
+      const claimedCount = db.prepare(`
+        SELECT COUNT(*) as count FROM claims WHERE drop_id = ?
+      `).get(dropId);
+
+      if (claimedCount.count >= drop.total_stock) {
+        return res.status(409).json({ error: 'All stock has been claimed' });
+      }
+
+      const waitlistPosition = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM waitlists 
+        WHERE drop_id = ? AND priority_score > ?
+      `).get(dropId, waitlist.priority_score);
+
+      const availableStock = drop.total_stock - claimedCount.count;
+      if (waitlistPosition.count >= availableStock) {
+        return res.status(409).json({ 
+          error: 'Not eligible for claim',
+          message: 'Higher priority users have claimed all available stock'
+        });
+      }
+
+      const claimCode = crypto.randomBytes(16).toString('hex').toUpperCase();
+
+      const result = db.prepare(`
+        INSERT INTO claims (drop_id, user_id, claim_code, claimed_at)
+        VALUES (?, ?, ?, ?)
+      `).run(dropId, userId, claimCode, now);
+
+      const claim = db.prepare('SELECT * FROM claims WHERE id = ?').get(result.lastInsertRowid);
+
+      res.status(201).json({
+        message: 'Claim successful',
+        claim: {
+          id: claim.id,
+          drop_id: claim.drop_id,
+          claim_code: claim.claim_code,
+          claimed_at: claim.claimed_at
+        }
+      });
+    } catch (error) {
+      console.error('Claim error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  transaction();
 });
 
 export default router;
